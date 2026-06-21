@@ -1,0 +1,134 @@
+# Active Directory - BloodHound Attack Path Analysis
+
+## 📌 Introduction
+
+In complex enterprise environments, security is rarely compromised through a single, massive vulnerability. Instead, adversaries achieve their objectives by subtly chaining together seemingly minor permission oversights, relationship linkages, and structural configurations.
+
+This project simulates a structured, graph-based attack path analysis against a live Active Directory domain (`pentestlab.local`). Starting from the restricted access profile of a low-privileged intern account, this module documents the methodical process of map collation, vulnerability chaining, and rapid privilege escalation using **BloodHound** as the primary analytical engine.
+
+---
+
+## 🎯 Why It Matters
+
+BloodHound fundamentally shifted the paradigm of identity infrastructure security. By translating disparate, abstract Active Directory permissions into graph-based relational pathways, it exposes hidden relationships that manual inspection could take weeks to discover.
+
+In enterprise environments, the shortest path from an unprivileged tier-3 workstation user to absolute Domain Admin dominance often requires only a few hops. For an offensive operator, mastering this graph-driven strategy is critical to executing efficient, realistic simulations. For a defensive engineer, visualizing these hidden attack vectors is the only reliable way to break identity chains before an adversary weaponizes them.
+
+---
+
+## 🧠 Learning Objectives
+
+By completing this practical module, the following advanced identity exploitation, persistence, and forensic concepts are thoroughly mastered without external assistance:
+
+* **Graph-Driven Enumeration:** Harnessing BloodHound data collectors (SharpHound) to ingest object boundaries, session logs, trust orientations, and explicit Access Control Lists (ACLs).
+* **Object Control Abuse:** Weaponizing misconfigured security descriptors and structural object permissions—such as `GenericAll`, `GenericWrite`, and `WriteDacl` control mappings.
+* **Credential Roasting Pipelines:** Forcing cryptographic ticket exposures across target user landscapes via strategic **AS-REP Roasting** and **Kerberoasting** loops.
+* **Domain Database Extraction:** Executing directory-wide cryptographic key harvesting via **DCSync** replication mechanics, bypassing traditional local system credential dumping.
+* **Kerberos Ticket Forgery:** Generating illicit, custom-signed **Golden Tickets** utilizing compromised Active Directory Key Distribution Center secrets (`krbtgt`) to secure absolute, un-auditable domain persistence.
+* **Data Leakage Auditing:** Scanning unsecured system volumes (`SYSVOL`) and file servers (`SMB`) for hardcoded administrative passwords, scripts, and deployment configurations.
+* **Adversary Forensics:** Correlating specific execution windows to Windows Security Event Logs, checking for structural footprint trace indicators like PowerShell transcript records and definitive Event IDs.
+
+---
+
+## 🛠️ Environmental Architecture & Kill-Chain Flow
+
+The offensive assessment operations are orchestrated exclusively from an isolated Kali Linux architecture pointing directly into an untrusted corporate subnet template.
+
+```
+[ Initial Onboarding User ] 
+           │
+           ▼
+[ SharpHound Ingestion Sweep ] ──> [ BloodHound Path Graph Analysis ]
+                                                   │
+                                                   ▼
+                                      [ ACL Abuse (GenericAll) ]
+                                                   │
+                                                   ▼
+                                     [ Kerberoasting / AS-REP Roast ]
+                                                   │
+                                                   ▼
+                                      [ DCSync Account Dumping ]
+                                                   │
+                                                   ▼
+                                      [ Golden Ticket Persistence ]
+
+```
+
+### Lab Specifications
+
+* **Attacker System OS:** Kali Linux (hosting core database servers, BloodHound graph suites, and protocol execution frameworks).
+* **Target Workstation Environment:** Windows 11 Enterprise (simulating victim operational workspaces).
+* **Domain Infrastructure Host:** Windows Server 2019 (acting as the authoritative Domain Controller for `pentestlab.local`).
+
+> [!NOTE]
+> Per rigorous testing guidelines, zero administrative credentials to the Windows Server platform are supplied upfront. Comprehensive infrastructure access must be won cleanly through remote enumeration, relationship mapping, and exploit orchestration from the Kali Linux testing machine.
+
+---
+
+## 🔬 Forensics & Event Correlation Cheat Sheet
+
+A crucial component of this project is understanding the footprints left behind during escalation. The following Event IDs track the lifecycle of the attack chain:
+
+| Attack Stage | Vector / Mechanism | Definitive Windows Event ID |
+| --- | --- | --- |
+| **Authentication** | Kerberos TGS Ticket Request (Kerberoasting) | `4769` (Ticket Granting Service requested with weak cipher) |
+| **Authentication** | Kerberos AS-REP Request (AS-REP Roasting) | `4768` (Authentication Ticket requested without pre-auth) |
+| **Privilege Abuse** | Directory Replication Abuse (DCSync) | `4662` (An operation was performed on an object - DS Replication) |
+| **Persistence** | Golden Ticket Utilization | `4624` (Successful Logon using forged/anomalous parameters) |
+| **Execution** | Malicious PowerShell Activity | `4104` (PowerShell Script Block Logging capture) |
+
+---
+
+## 🔧 Deployment & Core Operational Tooling
+
+To replicate the graph compilation and execution sequences built natively inside this workspace environment:
+
+### 1. Ingesting Active Directory State
+
+Execute the execution collection binary directly from an established user shell within the target ecosystem to dump the state catalog files:
+
+```powershell
+.\SharpHound.exe --CollectionMethod All --Domain pentestlab.local
+
+```
+
+### 2. Running the Analytical Graphic Frontend
+
+Initialize the localized graph query environment inside the Kali Linux testing console:
+
+```bash
+# Start the underlying Neo4j graph storage engine
+sudo neo4j start
+
+# Launch the visual analysis client mapping interface
+bloodhound
+
+```
+
+*Drag-and-drop the generated SharpHound `.zip` archive data dump directly into the user interface to instantly construct complex lateral path visualization models.*
+
+---
+
+## ⚙️ Development & Compliance Standards
+
+* **Authoring Frameworks:** Scripts, payload arrays, and documentation layout adjustments are handled cleanly inside terminal-native applications (`vi`, `vim`, `emacs`).
+* **POSIX Compliance Verification:** Every single file and logging module maintained within this directory architecture terminates strictly with an explicit trailing newline character (`\n`) to preserve text parsing automation integrity.
+
+---
+
+## 🔒 Defensive Architecture (Remediation Design)
+
+> [!IMPORTANT]
+> To defend enterprise domains against graph-mapped path attacks, blue teams must move away from point-in-time perimeter defense and apply systemic hardening controls:
+> 1. **Clean Up Object ACLs:** Audit and strip explicit control permissions (e.g., `GenericAll`, `WriteDacl`) granted to non-administrative groups over high-value users or objects.
+> 2. **Enforce Tiered Administration:** Isolate domain administrator accounts, ensuring they never log into lower-tier workstations where their credential material could be cached and extracted.
+> 3. **Protect Replication Permissions:** Strictly restrict the `Get Changes All` directory synchronization permissions to legitimate Domain Controllers, immediately breaking the capability to execute unauthorized **DCSync** attacks.
+> 
+> 
+
+---
+
+## ⚠️ Disclaimer
+
+> [!WARNING]
+> This repository is compiled and maintained solely for ethical security education, formal academic lab evaluation, and verified professional red-teaming simulations. Executing unauthorized enumeration passes or vulnerability exploitation against infrastructure networks without explicit, prior legal consent is strictly prohibited by law.
